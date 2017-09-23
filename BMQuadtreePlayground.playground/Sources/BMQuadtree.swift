@@ -58,8 +58,8 @@ extension GKQuad {
 
 /// The BMQuadtree is an almost drop-in replacement for the GKQuadtree,
 /// as that one is reportedly not working as of iOS10.
-/// 
-/// A tree data structure where each level has 4 children that subdivide a 
+///
+/// A tree data structure where each level has 4 children that subdivide a
 /// given space into the four quadrants.
 /// Stores arbitrary data of any class via points and quads.
 final public class BMQuadtree <T: AnyObject> {
@@ -108,7 +108,7 @@ final public class BMQuadtree <T: AnyObject> {
   /// - Returns: the quadtree node the element was added to
   @discardableResult
   public func add(_ element: T, at point: vector_float2) -> BMQuadtreeNode<T>? {
-    
+
     // Checking if the point specified should be within this quad.
     // With the initial tree, it is always true. This comes handy when
     // subdividing the quad and need to place the object to a specific quad.
@@ -191,11 +191,11 @@ final public class BMQuadtree <T: AnyObject> {
    * @param quad the quad associated with the element you want to store
    * @return the quad tree node the element was added to
    */
-//  open func add(_ element: ElementType, in quad: GKQuad) -> GKQuadtreeNode
+  //  open func add(_ element: ElementType, in quad: GKQuad) -> GKQuadtreeNode
 
   // MARK: - Searching For Elements
 
-  /// Returns all of the elements in the quadtree node this 
+  /// Returns all of the elements in the quadtree node this
   /// point would be placed in.
   ///
   /// - Parameter point: the point to query
@@ -376,7 +376,7 @@ final public class BMQuadtree <T: AnyObject> {
   /// If there are no more items in the node, we try unifying. See `unify()`.
   ///
   /// Note that this is an exhaustive search and is slow.
-  /// Cache the relevant GKQuadTreeNode and use removeElement:WithNode: 
+  /// Cache the relevant GKQuadTreeNode and use removeElement:WithNode:
   /// for better performance.
   ///
   /// - Parameter element: the data to be removed
@@ -389,7 +389,7 @@ final public class BMQuadtree <T: AnyObject> {
 
       guard index != nil,
         index! >= 0 else {
-        return false
+          return false
       }
 
       // Removing element
@@ -413,6 +413,16 @@ final public class BMQuadtree <T: AnyObject> {
     }
   }
 
+  /**
+   * Removes the given NSObject from the given quadtree node
+   * Note that this is not an exhaustive search and is faster than removeData:
+   *
+   * @param element the element to be removed
+   * @param node the node in which this data resides
+   * @return returns YES if the data was removed, NO otherwise
+   */
+  //  open func remove(_ data: ElementType, using node: GKQuadtreeNode) -> Bool
+
   // MARK: - Private
 
   /// Keeping a reference to the parent so we can search nearby quads
@@ -435,16 +445,6 @@ final public class BMQuadtree <T: AnyObject> {
   internal var hasQuads: Bool {
     return self.northWest != nil
   }
-
-  /**
-   * Removes the given NSObject from the given quadtree node
-   * Note that this is not an exhaustive search and is faster than removeData:
-   *
-   * @param element the element to be removed
-   * @param node the node in which this data resides
-   * @return returns YES if the data was removed, NO otherwise
-   */
-//  open func remove(_ data: ElementType, using node: GKQuadtreeNode) -> Bool
 
   /// Function to subdivide a QuadTree into 4 smaller QuadTrees
   private func subdivide() {
@@ -503,10 +503,10 @@ final public class BMQuadtree <T: AnyObject> {
       self.northEast?.objects.count == 0 &&
       self.southWest?.objects.count == 0 &&
       self.southEast?.objects.count == 0 {
-        self.northWest = nil
-        self.northEast = nil
-        self.southWest = nil
-        self.southEast = nil
+      self.northWest = nil
+      self.northEast = nil
+      self.southWest = nil
+      self.southEast = nil
     }
 
     // BMTODO: Collect all elements in sub-quads and place them in self instead
@@ -514,3 +514,4 @@ final public class BMQuadtree <T: AnyObject> {
 
   }
 }
+

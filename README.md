@@ -8,6 +8,12 @@ A quadtree manages its structure to optimize for spatial searches—unlike a bas
 
 The tree can hold any objects (`AnyObject`). The implementation follows the `GKQuadtree`.
 
+## TODO
+
+[ ] Unify/clean-up after removing object from tree
+[ ] Add object to quadtree with a given quad
+[ ] Remove object from the given quadtree node
+
 ## Creating A Tree
 
 A tree is initialised with a bounding quad (axis-aligned bounding rectangle) and a minimum cell size.
