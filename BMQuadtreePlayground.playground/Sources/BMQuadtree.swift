@@ -3,7 +3,7 @@
 //  Bikemap
 //
 //  Created by Adam Eri on 22/06/2017.
-//  Copyright © 2017 Bikemap GmbH.
+//  Copyright © 2017 Bikemap GmbH. Apache License 2.0
 //
 
 import Foundation
@@ -79,13 +79,22 @@ final public class BMQuadtree <T: AnyObject> {
   /// The depth of the tree
   var depth: Int64 = 0
 
+  /// The maximum depth of the tree. The limit is there to avoid infinite loops
+  /// when adding the same, or very close elements in large numbers.
+  /// This limits the maximum amount of elements to be stored in the tree:
+  /// numberOfNodes ^ maximumDepth * minCellSize
+  /// 4 ^ 10 * 3 = 3.145.728
+  private var maximumDepth: Int64
+
   // MARK: - Initialise
 
   public init(
     boundingQuad quad: GKQuad,
-    minimumCellSize minCellSize: Float = 1) {
+    minimumCellSize minCellSize: Float = 1,
+    maximumDepth: Int64 = 10) {
     self.quad = quad
     self.minCellSize = minCellSize
+    self.maximumDepth = maximumDepth
   }
 
   // MARK: - Adding Elements
@@ -131,6 +140,10 @@ final public class BMQuadtree <T: AnyObject> {
         .filter({ $0.1.x == point.x && $0.1.y == point.y })
 
       guard Float(existingElements.count) < self.minCellSize else {
+        return nil
+      }
+
+      guard self.depth < self.maximumDepth else {
         return nil
       }
 

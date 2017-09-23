@@ -3,7 +3,7 @@
 //  Bikemap
 //
 //  Created by Adam Eri on 18/07/2017.
-//  Copyright © 2017 Bikemap GmbH.
+//  Copyright © 2017 Bikemap GmbH. Apache License 2.0
 //
 
 import Foundation
