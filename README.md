@@ -19,9 +19,9 @@ The implementation is using [Axis-Aligned Bounding Boxed (AABB)](https://en.wiki
 
 ## TODO
 
-[ ] Unify/clean-up after removing object from tree
-[ ] Add object to quadtree with a given quad
-[ ] Remove object from the given quadtree node
+* [ ] Unify/clean-up after removing object from tree
+* [ ] Add object to quadtree with a given quad
+* [ ] Remove object from the given quadtree node
 
 ## Creating A Tree
 
