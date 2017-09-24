@@ -514,4 +514,3 @@ final public class BMQuadtree <T: AnyObject> {
 
   }
 }
-

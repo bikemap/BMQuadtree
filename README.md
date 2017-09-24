@@ -1,12 +1,21 @@
 # BMQuadtree
 
-Swift implementation of a Quadtree. A drop-in replacement for GameplayKit's GKQuadtree [for it is not working properly](https://forums.developer.apple.com/thread/53458).
+Swift implementation of a Quadtree. A drop-in replacement for GameplayKit's 
+GKQuadtree [for it is not working properly](https://forums.developer.apple.com/thread/53458).
 
-A quadtree manages its structure to optimize for spatial searches—unlike a basic data structure such as an array or dictionary, a quadtree can find all elements occupying a specific position or region very quickly. The quadtree partitioning strategy divides space into four quadrants at each level, as illustrated in Figure 1. When a quadrant contains more than one object, the tree subdivides that region into four smaller quadrants, adding a level to the tree.
+A quadtree manages its structure to optimize for spatial searches—unlike a basic 
+data structure such as an array or dictionary, a quadtree can find all elements 
+occupying a specific position or region very quickly. The quadtree partitioning 
+strategy divides space into four quadrants at each level, as illustrated in 
+Figure 1. When a quadrant contains more than one object, the tree subdivides 
+that region into four smaller quadrants, adding a level to the tree.
 
 ![Figure 1](https://docs-assets.developer.apple.com/published/1a079d3016/quadtree_2x_f3a2f6b0-7e06-4d82-bb5d-33861c64ecd7.png)
 
-The tree can hold any objects (`AnyObject`). The implementation follows the `GKQuadtree`.
+The tree can hold any objects (`AnyObject`). 
+The implementation follows the `GKQuadtree`.
+
+The implementation is using [Axis-Aligned Bounding Boxed (AABB)](https://en.wikipedia.org/wiki/Minimum_bounding_box#Axis-aligned_minimum_bounding_box) just like the GameplayKit implementation.
 
 ## TODO
 
@@ -16,7 +25,8 @@ The tree can hold any objects (`AnyObject`). The implementation follows the `GKQ
 
 ## Creating A Tree
 
-A tree is initialised with a bounding quad (axis-aligned bounding rectangle) and a minimum cell size.
+A tree is initialised with a bounding quad (axis-aligned bounding rectangle) 
+and a minimum cell size.
 
 ```swift
 let tree = BMQuadtree(
@@ -24,62 +34,104 @@ let tree = BMQuadtree(
   minimumCellSize: 3)
 ```
 
-The minCellSize parameter controls the memory usage and performance of the tree. A lower value causes the tree to make more spatial divisions when adding elements; a higher value causes the tree to create fewer such divisions, but store more elements in each node. Which direction leads to better performance depends on the number and spatial arrangement of the elements you add to the tree—for best results, profile with different values to find one best suited to your app or game.
+The minCellSize parameter controls the memory usage and performance of the tree. 
+A lower value causes the tree to make more spatial divisions when adding 
+elements; a higher value causes the tree to create fewer such divisions, 
+but store more elements in each node. Which direction leads to better 
+performance depends on the number and spatial arrangement of the elements you 
+add to the tree—for best results, profile with different values to find one 
+best suited to your app or game.
 
-## Adding and Removeing Elements
+## Adding And Removeing Elements
 
 ```swift
   let location = CLLocation(latitude: item.latitude, longitude: item.longitude)
   tree.add(location, at: float2(item.latitude, item.longitude))
 ```
 
-## Searching for Elements
+```swift
+  tree.remove(location)
+```
+
+## Searching For Elements
+
+Nearest neigbour to a defined point.
 
 ```swift
-/// Nearest neighbour
 let nearest = tree.element(nearestTo: float2(0, 0))
 ```
 
+You filter for different types (classes) when performing a nearest element
+search.
 
 ```swift
-/// Nearest neighbour of a specific type
 let nearestOfType: CLLocation? =
   tree
     .element(nearestTo: float2(0, 0), type: CLLocation.self) as? CLLocation
 ```
 
+All of the elements in the quadtree node this point would be placed in.
+
 ```swift
-/// All of the elements in the quadtree node this
-/// point would be placed in.
 let elementAtPoint = tree.elements(at: float2(0, 0))
 ```
 
+All of the elements that resides in quadtree nodes which
+intersect the given quad. Recursively check if the earch quad contains
+the points in the quad.
+
 ```swift
-/// All of the elements that resides in quadtree nodes which
-/// intersect the given quad. Recursively check if the earch quad contains
-/// the points in the quad.
 let searchQuad = GKQuad(quadMin: float2(-10, -10), quadMax: float2(10, 10))
 let elementInQuad = tree.elements(in: searchQuad)
 ```
 
 # Extensions for MapKit
 
-To be able to use the quadtree for managing map data (locations, coordinates, instructions, POIs, etc.), there are a few extensions available for your convenience.
+To be able to use the quadtree for managing map data (locations, coordinates, 
+instructions, POIs, etc.), there are a few extensions available 
+for your convenience.
 
-**Initialising a `GKQuad` using a location and offset.**
+## `GKQuad` With CLLocation And Offset
 
-`GKQuad.init(location: CLLocation, offset: CLLocationDistance)`
+To define a quad using coordinated and offset in meters.
 
-**`GKQuad` for overlays**
+```swift
+let vienna = CLLocation(latitude: 48.21128, longitude: 16.364537)
+let quad = GKQuad(location: vienna, offset: 5000)
+```
 
-`MKOverlay.boundingQuad: GKQuad`
+## `GKQuad` For Overlays
 
-**`CLLocationCoordinate2D` and `CLLocation` to `vector_float2`**
+Let us say you have a track you show on the map as an MKOverlay. 
+You can access the bounding quad using:
 
-`CLLocationCoordinate2D.vector`, `CLLocation.vector`
+```swift
+let quad = trackOverlay.boundingQuad
+```
 
-**Debugging the tree on the map**
+## `CLLocationCoordinate2D` And `CLLocation` To `vector_float2`
 
-`BMQuadtree.debugOverlay`
+As float2-s are used to store the location of the objects, we added 
+convenience properties to work with `CLLocation` and `CLLocationCoordinate2D`
 
+```swift
+let vienna = CLLocation(latitude: 48.21128, longitude: 16.364537)
+let vector = vienna.vector
+```
+
+```swift
+let vienna = CLLocationCoordinate2DMake(latitude: 48.21128, longitude: 16.364537)
+let vector = vienna.vector
+```
+
+## Debugging
+
+Finally, to be able to visualise and debug the quadtree on the map, you 
+can use the convenience `debugOverlay` property of the tree and simply add it
+as a new overlay.
+
+```swift
+let quadtreeDebugOverlay: MKOverlay = tree?.debugOverlay
+map.add(quadtreeDebugOverlay)
+```
 
