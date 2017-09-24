@@ -19,14 +19,15 @@ The implementation is using [Axis-Aligned Bounding Boxed (AABB)](https://en.wiki
 
 ## TODO
 
+* [ ] Dependency managers (cocoapods, carthage, swiftpm)
 * [ ] Unify/clean-up after removing object from tree
 * [ ] Add object to quadtree with a given quad
 * [ ] Remove object from the given quadtree node
 
 ## Creating A Tree
 
-A tree is initialised with a bounding quad (axis-aligned bounding rectangle) 
-and a minimum cell size.
+A tree is initialised with a bounding quad (axis-aligned bounding rectangle), 
+a minimum cell size and a maximum depth.
 
 ```swift
 let tree = BMQuadtree(
@@ -34,15 +35,10 @@ let tree = BMQuadtree(
   minimumCellSize: 3)
 ```
 
-The minCellSize parameter controls the memory usage and performance of the tree. 
-A lower value causes the tree to make more spatial divisions when adding 
-elements; a higher value causes the tree to create fewer such divisions, 
-but store more elements in each node. Which direction leads to better 
-performance depends on the number and spatial arrangement of the elements you 
-add to the tree—for best results, profile with different values to find one 
-best suited to your app or game.
+By default, the minimum cell size is 1, but it does make sense to use a larger
+cell size, for instance 3.
 
-## Adding And Removeing Elements
+## Adding And Removing Elements
 
 ```swift
   let location = CLLocation(latitude: item.latitude, longitude: item.longitude)
@@ -66,8 +62,9 @@ search.
 
 ```swift
 let nearestOfType: CLLocation? =
-  tree
-    .element(nearestTo: float2(0, 0), type: CLLocation.self) as? CLLocation
+  tree.element(
+  	nearestTo: float2(0, 0), 
+  	type: CLLocation.self) as? CLLocation
 ```
 
 All of the elements in the quadtree node this point would be placed in.
@@ -81,7 +78,10 @@ intersect the given quad. Recursively check if the earch quad contains
 the points in the quad.
 
 ```swift
-let searchQuad = GKQuad(quadMin: float2(-10, -10), quadMax: float2(10, 10))
+let searchQuad = GKQuad(
+	quadMin: float2(-10, -10), 
+	quadMax: float2(10, 10))
+
 let elementInQuad = tree.elements(in: searchQuad)
 ```
 
@@ -102,7 +102,7 @@ let quad = GKQuad(location: vienna, offset: 5000)
 
 ## `GKQuad` For Overlays
 
-Let us say you have a track you show on the map as an MKOverlay. 
+Let us say you have a track you show on the map as an`MKOverlay`. 
 You can access the bounding quad using:
 
 ```swift
@@ -135,3 +135,29 @@ let quadtreeDebugOverlay: MKOverlay = tree?.debugOverlay
 map.add(quadtreeDebugOverlay)
 ```
 
+## Further Dicussions
+
+The **minCellSize** parameter controls the memory usage and performance of the 
+tree. A lower value causes the tree to make more spatial divisions when adding 
+elements; a higher value causes the tree to create fewer such divisions, 
+but store more elements in each node. Which direction leads to better 
+performance depends on the number and spatial arrangement of the elements you 
+add to the tree—for best results, profile with different values to find one 
+best suited to your app or game.
+
+The **maximum depth** is added for performance reasons and to aviod stack
+overflow crashed when adding the same or very close elements in large numbers.
+The default value is 10. This limits the maximum amount of elements to be 
+stored in the tree:
+
+```
+numberOfNodes ^ maximumDepth * minCellSize
+4 ^ 10 * 3 = 3.145.728
+```
+
+```swift
+let largeTree = BMQuadtree(
+  boundingQuad: largeOverlay.boundingQuad,
+  minimumCellSize: 10,
+  maximumDepth: 100)
+```

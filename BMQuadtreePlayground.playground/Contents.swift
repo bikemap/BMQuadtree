@@ -39,7 +39,8 @@ let largeOverlay = MKPolyline(
 /// the number, the faster the search within th quads, but larger the tree.
 largeTree = BMQuadtree(
   boundingQuad: largeOverlay.boundingQuad,
-  minimumCellSize: 3)
+  minimumCellSize: 3,
+  maximumDepth: 100)
 
 /// Then we add the coordinates to the tree.
 for item in largeCoordinateSet {
