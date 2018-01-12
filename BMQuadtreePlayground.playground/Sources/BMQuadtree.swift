@@ -3,14 +3,14 @@
 //  Bikemap
 //
 //  Created by Adam Eri on 22/06/2017.
-//  Copyright © 2017 Bikemap GmbH. Apache License 2.0
+//  Copyright © 2017 Bikemap GmbH. All rights reserved.
 //
 
 import Foundation
 import GameplayKit
 
 public class BMQuadtreeNode <T: AnyObject>: GKQuadtreeNode {
-  public var tree: BMQuadtree<T>
+  weak public var tree: BMQuadtree<T>?
 
   public init(tree: BMQuadtree<T>) {
     self.tree = tree
@@ -58,8 +58,8 @@ extension GKQuad {
 
 /// The BMQuadtree is an almost drop-in replacement for the GKQuadtree,
 /// as that one is reportedly not working as of iOS10.
-///
-/// A tree data structure where each level has 4 children that subdivide a
+/// 
+/// A tree data structure where each level has 4 children that subdivide a 
 /// given space into the four quadrants.
 /// Stores arbitrary data of any class via points and quads.
 final public class BMQuadtree <T: AnyObject> {
@@ -86,8 +86,6 @@ final public class BMQuadtree <T: AnyObject> {
   /// 4 ^ 10 * 3 = 3.145.728
   private var maximumDepth: Int64
 
-  // MARK: - Initialise
-
   public init(
     boundingQuad quad: GKQuad,
     minimumCellSize minCellSize: Float = 1,
@@ -96,8 +94,6 @@ final public class BMQuadtree <T: AnyObject> {
     self.minCellSize = minCellSize
     self.maximumDepth = maximumDepth
   }
-
-  // MARK: - Adding Elements
 
   /// Adds an NSObject to this quadtree with a given point.
   /// This data will always reside in the leaf node its point is in.
@@ -108,7 +104,7 @@ final public class BMQuadtree <T: AnyObject> {
   /// - Returns: the quadtree node the element was added to
   @discardableResult
   public func add(_ element: T, at point: vector_float2) -> BMQuadtreeNode<T>? {
-
+    
     // Checking if the point specified should be within this quad.
     // With the initial tree, it is always true. This comes handy when
     // subdividing the quad and need to place the object to a specific quad.
@@ -120,6 +116,9 @@ final public class BMQuadtree <T: AnyObject> {
     // tree has no leafs. If it has, the point goes into the leafs.
     if Float(self.objects.count) < self.minCellSize,
       self.hasQuads == false {
+      if self.depth > 10 {
+        log.debug("QuadTree depth", element, self.depth, self.minCellSize)
+      }
       self.objects.append((element, point))
       return BMQuadtreeNode(tree: self)
     }
@@ -146,7 +145,6 @@ final public class BMQuadtree <T: AnyObject> {
       guard self.depth < self.maximumDepth else {
         return nil
       }
-
       self.subdivide()
     }
 
@@ -191,12 +189,10 @@ final public class BMQuadtree <T: AnyObject> {
    * @param quad the quad associated with the element you want to store
    * @return the quad tree node the element was added to
    */
-  //  open func add(_ element: ElementType, in quad: GKQuad) -> GKQuadtreeNode
+//  open func add(_ element: ElementType, in quad: GKQuad) -> GKQuadtreeNode
 
-  // MARK: - Searching For Elements
-
-  /// Returns all of the elements in the quadtree node this
-  /// point would be placed in.
+  /// Returns all of the elements in the quadtree node this 
+  /// point would be placed in
   ///
   /// - Parameter point: the point to query
   /// - Returns: an NSArray of all the data found at the quad tree node this
@@ -261,7 +257,7 @@ final public class BMQuadtree <T: AnyObject> {
   /// if the tree is empty
   public func element(nearestTo point: vector_float2) -> T? {
     let nearestElement =
-      self.element(nearestTo: point, type: AnyObject.self, nearest: nil)
+      self.element(nearestTo: point, ofType: AnyObject.self, nearest: nil)
     return nearestElement?.element
   }
 
@@ -274,10 +270,10 @@ final public class BMQuadtree <T: AnyObject> {
   /// if the tree is empty
   public func element<U: AnyObject>(
     nearestTo point: vector_float2,
-    type: U.Type) -> T? {
+    ofType elementType: U.Type) -> T? {
 
     let nearestElement =
-      self.element(nearestTo: point, type: type, nearest: nil)
+      self.element(nearestTo: point, ofType: elementType, nearest: nil)
     return nearestElement?.element
   }
 
@@ -301,7 +297,7 @@ final public class BMQuadtree <T: AnyObject> {
   /// - Returns: The nearest object in the tree to the specified point, or nil
   private func element<U: AnyObject>(
     nearestTo point: vector_float2,
-    type: U.Type,
+    ofType elementType: U.Type,
     nearest: NearestElement? = nil) -> NearestElement? {
     var nearestElement = nearest
 
@@ -314,7 +310,7 @@ final public class BMQuadtree <T: AnyObject> {
 
     // Distance is either the distance to the last found nearest element
     // or the full width of the node.
-    let shortestDistance: Float = nearestElement?.distance ?? x2 - x1
+    let shortestDistance: Float = nearestElement?.distance ?? x2 - (x2 - x1)
 
     // We exculde quads, which are further on any axis then the last found
     // nearest element. This way we minimise the number of Euclidean distance
@@ -333,7 +329,7 @@ final public class BMQuadtree <T: AnyObject> {
       for object in self.objects {
 
         // Filter for the specified type
-        if type != AnyObject.self, Swift.type(of: object.0) != type {
+        if elementType != AnyObject.self, type(of: object.0) != elementType {
           continue
         }
 
@@ -349,34 +345,45 @@ final public class BMQuadtree <T: AnyObject> {
       // Scanning the sub-nodes for nearest element
       nearestElement = self
         .northWest?
-        .element(nearestTo: point, type: type, nearest: nearestElement) ??
+        .element(
+          nearestTo: point,
+          ofType: elementType,
+          nearest: nearestElement) ??
       nearestElement
 
       nearestElement = self
         .northEast?
-        .element(nearestTo: point, type: type, nearest: nearestElement) ??
+        .element(
+          nearestTo: point,
+          ofType: elementType,
+          nearest: nearestElement) ??
       nearestElement
 
       nearestElement = self
         .southWest?
-        .element(nearestTo: point, type: type, nearest: nearestElement) ??
+        .element(
+          nearestTo: point,
+          ofType: elementType,
+          nearest: nearestElement) ??
       nearestElement
 
       nearestElement = self
         .southEast?
-        .element(nearestTo: point, type: type, nearest: nearestElement) ??
+        .element(
+          nearestTo: point,
+          ofType: elementType,
+          nearest: nearestElement) ??
       nearestElement
     }
+
     return nearestElement
   }
-
-  // MARK: - Removing Elements
 
   /// Removes the given NSObject from this quad tree.
   /// If there are no more items in the node, we try unifying. See `unify()`.
   ///
   /// Note that this is an exhaustive search and is slow.
-  /// Cache the relevant GKQuadTreeNode and use removeElement:WithNode:
+  /// Cache the relevant GKQuadTreeNode and use removeElement:WithNode: 
   /// for better performance.
   ///
   /// - Parameter element: the data to be removed
@@ -389,7 +396,7 @@ final public class BMQuadtree <T: AnyObject> {
 
       guard index != nil,
         index! >= 0 else {
-          return false
+        return false
       }
 
       // Removing element
@@ -413,21 +420,11 @@ final public class BMQuadtree <T: AnyObject> {
     }
   }
 
-  /**
-   * Removes the given NSObject from the given quadtree node
-   * Note that this is not an exhaustive search and is faster than removeData:
-   *
-   * @param element the element to be removed
-   * @param node the node in which this data resides
-   * @return returns YES if the data was removed, NO otherwise
-   */
-  //  open func remove(_ data: ElementType, using node: GKQuadtreeNode) -> Bool
-
   // MARK: - Private
 
   /// Keeping a reference to the parent so we can search nearby quads
   /// and unsubdivide after deletion.
-  private var parent: BMQuadtree? {
+  private weak var parent: BMQuadtree? {
     didSet {
       self.depth = parent!.depth + 1
     }
@@ -445,6 +442,16 @@ final public class BMQuadtree <T: AnyObject> {
   internal var hasQuads: Bool {
     return self.northWest != nil
   }
+
+  /**
+   * Removes the given NSObject from the given quadtree node
+   * Note that this is not an exhaustive search and is faster than removeData:
+   *
+   * @param element the element to be removed
+   * @param node the node in which this data resides
+   * @return returns YES if the data was removed, NO otherwise
+   */
+//  open func remove(_ data: ElementType, using node: GKQuadtreeNode) -> Bool
 
   /// Function to subdivide a QuadTree into 4 smaller QuadTrees
   private func subdivide() {
@@ -503,10 +510,10 @@ final public class BMQuadtree <T: AnyObject> {
       self.northEast?.objects.count == 0 &&
       self.southWest?.objects.count == 0 &&
       self.southEast?.objects.count == 0 {
-      self.northWest = nil
-      self.northEast = nil
-      self.southWest = nil
-      self.southEast = nil
+        self.northWest = nil
+        self.northEast = nil
+        self.southWest = nil
+        self.southEast = nil
     }
 
     // BMTODO: Collect all elements in sub-quads and place them in self instead
